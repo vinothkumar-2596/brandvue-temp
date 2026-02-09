@@ -138,8 +138,11 @@
     color: hsl(var(--muted-foreground));
   }
   .theme-dark .header-bar {
-    background-color: rgba(29, 29, 29, 0.95);
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(29, 29, 29, 0.78);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(24px) saturate(1.15);
+    -webkit-backdrop-filter: blur(24px) saturate(1.15);
   }
   .theme-dark .header-title {
     color: hsl(var(--foreground));
@@ -235,17 +238,6 @@
     background-attachment: fixed;
     position: relative;
     caret-color: transparent;
-  }
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    border: 10px solid rgba(255, 255, 255, 0.9);
-    pointer-events: none;
-    z-index: 60;
-  }
-  .theme-dark body::before {
-    border-color: rgba(255, 255, 255, 0.18);
   }
   html {
     scroll-behavior: smooth;

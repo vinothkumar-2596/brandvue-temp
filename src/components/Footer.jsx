@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Mail,
@@ -17,8 +18,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [isNewsletterSubmitting, setIsNewsletterSubmitting] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState({
+    type: "",
+    text: "",
+  });
+
   const quickLinks = [
     { href: "/about", label: "About Us" },
     { href: "/services", label: "Services" },
@@ -34,6 +43,60 @@ export default function Footer() {
     "Web Development",
     "Digital Marketing",
   ];
+
+  const handleNewsletterSubmit = async (event) => {
+    event.preventDefault();
+    if (isNewsletterSubmitting) return;
+
+    const email = newsletterEmail.trim().toLowerCase();
+    if (!email) {
+      setNewsletterMessage({
+        type: "error",
+        text: "Please enter your email address.",
+      });
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setNewsletterMessage({
+        type: "error",
+        text: "Please enter a valid email address.",
+      });
+      return;
+    }
+
+    setIsNewsletterSubmitting(true);
+    setNewsletterMessage({ type: "", text: "" });
+
+    try {
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .insert([{ email }]);
+
+      if (error?.code === "23505") {
+        setNewsletterMessage({
+          type: "success",
+          text: "This email is already subscribed.",
+        });
+        return;
+      }
+
+      if (error) throw error;
+
+      setNewsletterEmail("");
+      setNewsletterMessage({
+        type: "success",
+        text: "Thanks for subscribing.",
+      });
+    } catch (err) {
+      setNewsletterMessage({
+        type: "error",
+        text: err?.message || "Subscription failed. Please try again.",
+      });
+    } finally {
+      setIsNewsletterSubmitting(false);
+    }
+  };
 
   return (
     <footer className="px-4 sm:px-6 lg:px-8 pb-16">
@@ -93,39 +156,47 @@ export default function Footer() {
               <p className="mt-2 text-sm text-white/60">
                 Monthly insights on branding, design, and growth.
               </p>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <div className="flex-1 rounded-full border border-white/0 bg-white/3 px-4 py-3 text-xs text-white/70 backdrop-blur-xl">
-                  Enter your email
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button className="rounded-full bg-primary px-6 py-3 text-xs font-semibold text-primary-foreground">
-                      Subscribe
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Subscribe to updates</DialogTitle>
-                      <DialogDescription>
-                        Get curated insights and agency news in your inbox.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form className="grid gap-4">
-                      <input
-                        type="email"
-                        placeholder="Email address"
-                        className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm"
-                      />
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground"
-                      >
-                        Confirm Subscription
-                      </button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <form
+                onSubmit={handleNewsletterSubmit}
+                className="mt-4 flex flex-col gap-3 sm:flex-row"
+              >
+                <label htmlFor="newsletter-email" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(event) => {
+                    setNewsletterEmail(event.target.value);
+                    if (newsletterMessage.text) {
+                      setNewsletterMessage({ type: "", text: "" });
+                    }
+                  }}
+                  placeholder="Enter your email"
+                  className="flex-1 rounded-full border border-white/0 bg-white/3 px-4 py-3 text-xs text-white/70 placeholder:text-white/50 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <button
+                  type="submit"
+                  disabled={isNewsletterSubmitting}
+                  className="rounded-full bg-primary px-6 py-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isNewsletterSubmitting ? "Subscribing..." : "Subscribe"}
+                </button>
+              </form>
+              {newsletterMessage.text ? (
+                <p
+                  aria-live="polite"
+                  className={`mt-3 text-xs ${
+                    newsletterMessage.type === "error"
+                      ? "text-rose-300"
+                      : "text-emerald-200"
+                  }`}
+                >
+                  {newsletterMessage.text}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

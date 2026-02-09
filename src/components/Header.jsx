@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import gsap from "gsap";
 import {
   Menu,
   X,
@@ -20,9 +21,15 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isBlogDropdownOpen, setIsBlogDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("dark");
+  const isDarkTheme = theme === "dark";
   const dropdownCloseTimer = useRef(null);
   const blogCloseTimer = useRef(null);
+  const thumbRef = useRef(null);
+  const activeIconRef = useRef(null);
+  const leftIconRef = useRef(null);
+  const rightIconRef = useRef(null);
+  const hasSetInitialToggleState = useRef(false);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 80);
@@ -34,11 +41,45 @@ export default function Header() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedTheme = window.localStorage.getItem("theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    const resolvedTheme = storedTheme || (prefersDark ? "dark" : "light");
+    const resolvedTheme = storedTheme || "dark";
     setTheme(resolvedTheme);
     document.documentElement.classList.toggle("theme-dark", resolvedTheme === "dark");
   }, []);
+
+  useEffect(() => {
+    if (!thumbRef.current || !activeIconRef.current || !leftIconRef.current || !rightIconRef.current) {
+      return;
+    }
+
+    const thumbX = isDarkTheme ? 45 : 0;
+    const thumbBackground = isDarkTheme
+      ? "linear-gradient(145deg,#171A1F,#06080B)"
+      : "linear-gradient(145deg,#E8DDC9,#D9C9AD)";
+    const thumbBorder = isDarkTheme ? "rgba(255,255,255,0.10)" : "rgba(188,168,130,0.35)";
+    const thumbShadow = "none";
+    const trackIconColor = "#D8CCB5";
+    const trackIconVisibleOpacity = 0.45;
+    const trackIconHiddenOpacity = 0;
+
+    if (!hasSetInitialToggleState.current) {
+      hasSetInitialToggleState.current = true;
+      gsap.set(thumbRef.current, { x: thumbX, background: thumbBackground, borderColor: thumbBorder, boxShadow: thumbShadow });
+      gsap.set(leftIconRef.current, { opacity: isDarkTheme ? trackIconVisibleOpacity : trackIconHiddenOpacity, color: trackIconColor });
+      gsap.set(rightIconRef.current, { opacity: isDarkTheme ? trackIconHiddenOpacity : trackIconVisibleOpacity, color: trackIconColor });
+      return;
+    }
+
+    const timeline = gsap.timeline({ defaults: { duration: 0.42, ease: "power3.out" } });
+    timeline
+      .to(thumbRef.current, { x: thumbX, background: thumbBackground, borderColor: thumbBorder, boxShadow: thumbShadow }, 0)
+      .to(leftIconRef.current, { opacity: isDarkTheme ? trackIconVisibleOpacity : trackIconHiddenOpacity, color: trackIconColor }, 0)
+      .to(rightIconRef.current, { opacity: isDarkTheme ? trackIconHiddenOpacity : trackIconVisibleOpacity, color: trackIconColor }, 0)
+      .fromTo(activeIconRef.current, { scale: 0.86, rotate: isDarkTheme ? 14 : -14 }, { scale: 1, rotate: 0, duration: 0.32, ease: "back.out(2)" }, 0.1);
+
+    return () => {
+      timeline.kill();
+    };
+  }, [isDarkTheme]);
 
   const setThemeMode = (mode) => {
     setTheme(mode);
@@ -99,12 +140,12 @@ export default function Header() {
       }`}
     >
       <div className="mx-auto flex h-28 max-w-[1200px] items-center px-4 sm:px-6 pt-5">
-        <div className="header-bar flex w-full items-center justify-between rounded-2xl border border-white/80 bg-white/75 px-5 py-3 backdrop-blur-2xl">
+        <div className="header-bar flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#1D1D1D]/80 px-5 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
           <Link to="/" className="flex items-center gap-3">
-            <span className="header-logo flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/70 shadow-inner">
-              <span className="header-logo-dot h-3 w-3 rounded-full bg-slate-900" />
+            <span className="header-logo flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.08] shadow-inner">
+              <span className="header-logo-dot h-3 w-3 rounded-full bg-[#F5EFE5]" />
             </span>
-            <span className="header-title text-lg font-semibold text-slate-900">BrandView India</span>
+            <span className="header-title text-lg font-semibold text-[#F5EFE5]">BrandView India</span>
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-7 text-sm font-medium">
@@ -114,7 +155,7 @@ export default function Header() {
               to={link.href}
               className={({ isActive }) =>
                 `header-link transition-colors duration-200 ${
-                  isActive ? "text-[#B3A380]" : "text-slate-600 hover:text-slate-900"
+                  isActive ? "text-[#B3A380]" : "text-[#D8CCB5]/70 hover:text-[#F5EFE5]"
                 }`
               }
             >
@@ -130,7 +171,7 @@ export default function Header() {
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className={`header-link flex items-center transition-colors duration-200 ${
-                isDropdownOpen ? "text-[#B3A380]" : "text-slate-600 hover:text-slate-900"
+                isDropdownOpen ? "text-[#B3A380]" : "text-[#D8CCB5]/70 hover:text-[#F5EFE5]"
               }`}
             >
               Pages
@@ -189,7 +230,7 @@ export default function Header() {
             <button
               onClick={() => setIsBlogDropdownOpen(!isBlogDropdownOpen)}
               className={`header-link flex items-center transition-colors duration-200 ${
-                isBlogDropdownOpen ? "text-[#B3A380]" : "text-slate-600 hover:text-slate-900"
+                isBlogDropdownOpen ? "text-[#B3A380]" : "text-[#D8CCB5]/70 hover:text-[#F5EFE5]"
               }`}
             >
               Blog
@@ -244,7 +285,7 @@ export default function Header() {
             to="/contact"
             className={({ isActive }) =>
               `header-link transition-colors duration-200 ${
-                isActive ? "text-[#B3A380]" : "text-slate-600 hover:text-slate-900"
+                isActive ? "text-[#B3A380]" : "text-[#D8CCB5]/70 hover:text-[#F5EFE5]"
               }`
             }
           >
@@ -253,36 +294,68 @@ export default function Header() {
         </nav>
 
           <div className="hidden lg:flex items-center gap-3">
-            <div className="flex h-9 items-center gap-2 rounded-full border border-white/60 bg-white/90 px-2 shadow-[0_6px_18px_rgba(15,23,42,0.08)] transition-shadow duration-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-              <button
-                type="button"
-                onClick={() => setThemeMode("dark")}
-                className={`flex h-7 w-7 items-center justify-center rounded-full transition duration-200 ease-out hover:scale-105 active:scale-95 ${
-                  theme === "dark"
-                    ? "bg-[#B3A380] text-secondary shadow-sm"
-                    : "text-secondary/50 hover:text-secondary"
-                }`}
-                aria-label="Enable dark mode"
-                aria-pressed={theme === "dark"}
-              >
-                <Moon className="h-3.5 w-3.5" />
-              </button>
+            <div
+              role="radiogroup"
+              aria-label="Theme mode"
+              className="relative h-11 w-[89px] overflow-hidden rounded-full border border-white/10 bg-[linear-gradient(145deg,#111418,#050608)] p-1"
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  setThemeMode("light");
+                }
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  setThemeMode("dark");
+                }
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setThemeMode("light")}
-                className={`flex h-7 w-7 items-center justify-center rounded-full transition duration-200 ease-out hover:scale-105 active:scale-95 ${
-                  theme === "light"
-                    ? "bg-[#B3A380] text-secondary shadow-sm"
-                    : "text-secondary/50 hover:text-secondary"
-                }`}
+                role="radio"
+                aria-checked={!isDarkTheme}
+                tabIndex={!isDarkTheme ? 0 : -1}
                 aria-label="Enable light mode"
-                aria-pressed={theme === "light"}
+                className="absolute inset-y-0 left-0 z-20 w-1/2 rounded-l-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B3A380]"
+              />
+              <button
+                type="button"
+                onClick={() => setThemeMode("dark")}
+                role="radio"
+                aria-checked={isDarkTheme}
+                tabIndex={isDarkTheme ? 0 : -1}
+                aria-label="Enable dark mode"
+                className="absolute inset-y-0 right-0 z-20 w-1/2 rounded-r-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B3A380]"
+              />
+              <span
+                ref={leftIconRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-[14px] top-1/2 z-10 -translate-y-1/2 text-[#D8CCB5] opacity-[0.45]"
               >
-                <Sun className="h-3.5 w-3.5" />
-              </button>
+                <Sun className="h-4 w-4" />
+              </span>
+              <span
+                ref={rightIconRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute right-[14px] top-1/2 z-10 -translate-y-1/2 text-[#D8CCB5] opacity-0"
+              >
+                <Moon className="h-4 w-4" />
+              </span>
+              <span
+                ref={thumbRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1 top-1 z-30 flex h-[35px] w-[35px] items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(145deg,#171A1F,#06080B)]"
+              >
+                <span
+                  ref={activeIconRef}
+                  className={isDarkTheme ? "text-[#D8CCB5]" : "text-[#6C5532]"}
+                >
+                  {isDarkTheme ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </span>
+              </span>
             </div>
             <Link to="/contact">
-              <Button className="h-9 rounded-2xl bg-secondary px-5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/90">
+              <Button className="h-10 rounded-2xl border border-white/10 bg-[#1A1A1A] px-5 text-xs font-semibold text-[#F5EFE5] hover:bg-[#222222]">
                 Start a project
                 <ArrowRight className="ml-2 h-4 w-4 text-[#B3A380]" />
               </Button>
@@ -301,12 +374,12 @@ export default function Header() {
 
       {isMobileMenuOpen && (
         <div className="lg:hidden mx-auto max-w-[1200px] px-4 sm:px-6">
-          <div className="mt-3 rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
+          <div className="mt-3 rounded-3xl border border-white/[0.15] bg-[#1D1D1D]/90 p-6 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-2xl">
             {navLinks.map((link) => (
               <NavLink
                 key={link.href}
                 to={link.href}
-                className="block text-lg text-slate-600 transition-colors hover:text-slate-900"
+                className="block text-lg text-[#D8CCB5]/80 transition-colors hover:text-[#F5EFE5]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
@@ -316,7 +389,7 @@ export default function Header() {
               <NavLink
                 key={link.href}
                 to={link.href}
-                className="block text-lg text-slate-600 transition-colors hover:text-slate-900"
+                className="block text-lg text-[#D8CCB5]/80 transition-colors hover:text-[#F5EFE5]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
@@ -326,7 +399,7 @@ export default function Header() {
               <NavLink
                 key={link.href}
                 to={link.href}
-                className="block text-lg text-slate-600 transition-colors hover:text-slate-900"
+                className="block text-lg text-[#D8CCB5]/80 transition-colors hover:text-[#F5EFE5]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
@@ -334,13 +407,13 @@ export default function Header() {
             ))}
             <NavLink
               to="/contact"
-              className="block text-lg text-slate-600 transition-colors hover:text-slate-900"
+              className="block text-lg text-[#D8CCB5]/80 transition-colors hover:text-[#F5EFE5]"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Contact
             </NavLink>
             <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>
-              <Button className="mt-4 w-full rounded-full bg-slate-900 text-white hover:bg-slate-900/90">
+              <Button className="mt-4 w-full rounded-full border border-white/10 bg-[#1A1A1A] text-[#F5EFE5] hover:bg-[#222222]">
                 Start a project
               </Button>
             </Link>
